@@ -44,9 +44,16 @@ def square_units() -> List[Unit]:
 
 
 @cache(maxsize=None)
+def diagonal_units() -> List[Unit]:
+    """Returns the list of square units."""
+    return [[r + c for (r, c) in zip(rows, cols)],
+            [r + c for (r, c) in zip(reversed(rows), cols)]]
+
+
+@cache(maxsize=None)
 def unit_list() -> List[Unit]:
     """Returns the list of square units."""
-    return row_units() + column_units() + square_units()
+    return row_units() + column_units() + square_units() + diagonal_units()
 
 
 @cache(maxsize=None)
