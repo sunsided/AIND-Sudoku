@@ -92,7 +92,8 @@ class TestDiagonalSudoku(unittest.TestCase):
                           'D1': '5'}
 
     def test_solve(self):
-        self.assertEqual(solution.solve(self.diagonal_grid), self.solved_diag_sudoku)
+        self.assertEqual(solution.solve(self.diagonal_grid), self.solved_diag_sudoku,
+                         "Your diagonal Sudoku solution produced an unexpected board.")
 
 
 if __name__ == '__main__':
