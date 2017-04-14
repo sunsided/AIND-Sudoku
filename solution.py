@@ -15,54 +15,6 @@ cols = '123456789'
 digits = '123456789'
 
 
-def assign_value(values, box, value):
-    """
-    Please use this function to update your values dictionary!
-    Assigns a value to a given box. If it updates the board record it.
-    """
-
-    # Don't waste memory appending actions that don't actually change any values
-    if values[box] == value:
-        return values
-
-    values[box] = value
-    if len(value) == 1:
-        assignments.append(values.copy())
-    return values
-
-
-def naked_twins(values):
-    """Eliminate values using the naked twins strategy.
-    Args:
-        values(dict): a dictionary of the form {'box_name': '123456789', ...}
-
-    Returns:
-        the values dictionary with the naked twins eliminated from peers.
-    """
-
-    # Find all instances of naked twins
-    # Eliminate the naked twins as possibilities for their peers
-
-
-def cross(a: str, b: str) -> List[str]:
-    """
-    Cross product of elements in a and elements in b.
-    
-    Parameters
-    ----------
-    a : str  
-        The string from which to select the first character.
-    b : str  
-        The string from which to select the second character.
-        
-    Returns
-    -------
-    List[str]
-        The combinatorial values.
-    """
-    return [s+t for s in a for t in b]
-
-
 @cache(maxsize=None)
 def boxes() -> List[Box]:
     """Returns the list of all boxes."""
@@ -110,6 +62,102 @@ def peer_dict() -> Dict[Box, Set[Box]]:
     units = unit_dict()
     return dict((s, set(sum(units[s], [])) - {s})
                 for s in boxes())
+
+
+def assign_value(values: SudokuDict, box: Box, value: Values) -> SudokuDict:
+    """
+    Please use this function to update your values dictionary!
+    Assigns a value to a given box. If it updates the board record it.
+    
+    Parameters
+    ----------
+    values : SudokuDict  
+        The sudoku in dictionary form.
+    box : Box
+        The box to update in the grid.
+    value: Values
+        The value(s) to assign to that grid.
+        
+    Returns
+    -------
+    SudokuDict
+        The resulting sudoku in dictionary form.
+    """
+
+    # Don't waste memory appending actions that don't actually change any values
+    if values[box] == value:
+        return values
+
+    values[box] = value
+    if len(value) == 1:
+        assignments.append(dict(values))
+    return values
+
+
+def naked_twins(values: SudokuDict) -> SudokuDict:
+    """
+    Eliminate values using the naked twins strategy.
+    
+    Naked twins are boxes of the same unit that contain identical candidate values, e.g.
+    two boxes that contain the same two values, three boxes that contain the same three values etc.
+    Because these values are locked to these boxes, they cannot possibly appear in any other
+    peer box. Because of this, they can be removed as candidates from all peers.
+    
+    Parameters
+    ----------
+    values : SudokuDict  
+        The sudoku in dictionary form.
+        
+    Returns
+    -------
+    SudokuDict
+        The values dictionary with the naked twins eliminated from peers.
+    """
+
+    # Find all instances of naked twins
+    for unit in unit_list():
+        possible_twins = {}  # type: Dict[Values, List[Box]]
+        # We don't have to look at length-1 entries because identical entries of that are an error to begin with.
+        # Likewise we don't have to look at length-9 entries because they don't leave
+        # room for removing anything from peers. Note that the maximum value in `range` is exclusive.
+        for length in range(2, 9):
+            candidates = ((values[box], box) for box in unit if len(values[box]) == length)
+            for v, b in candidates:
+                possible_twins.setdefault(v, []).append(b)
+
+        # We only need to look at digit combinations that are available to two or more boxes.
+        for candidate_digits in (c for c in possible_twins if len(possible_twins[c]) > 1):
+            twins = possible_twins[candidate_digits]
+            if len(twins) != len(candidate_digits):
+                continue
+
+            # Eliminate the naked twins as possibilities for their peers
+            peers = (box for box in unit if box not in twins)
+            for peer in peers:
+                old_choices = values[peer]
+                new_choices = ''.join(c for c in old_choices if c not in candidate_digits)
+                values = assign_value(values, peer, new_choices)
+
+    return values
+
+
+def cross(a: str, b: str) -> List[str]:
+    """
+    Cross product of elements in a and elements in b.
+    
+    Parameters
+    ----------
+    a : str  
+        The string from which to select the first character.
+    b : str  
+        The string from which to select the second character.
+        
+    Returns
+    -------
+    List[str]
+        The combinatorial values.
+    """
+    return [s+t for s in a for t in b]
 
 
 def grid_values(grid: str) -> SudokuDict:
@@ -170,7 +218,7 @@ def eliminate(values: SudokuDict) -> SudokuDict:
     for box in solved_values:
         digit = values[box]
         for peer in peers[box]:
-            values[peer] = values[peer].replace(digit, '')
+            values = assign_value(values, peer, values[peer].replace(digit, ''))
     return values
 
 
@@ -196,7 +244,7 @@ def only_choice(values: SudokuDict) -> SudokuDict:
             candidates = [box for box in unit
                           if digit in values[box]]
             if len(candidates) == 1:
-                values[candidates[0]] = digit
+                values = assign_value(values, candidates[0], digit)
     return values
 
 
@@ -222,11 +270,12 @@ def reduce_puzzle(values: SudokuDict) -> MaybeSolution:
     while not stalled:
         solved_values_before = n_solved(values)
         values = eliminate(values)
+        values = naked_twins(values)
         values = only_choice(values)
 
         stalled = solved_values_before == n_solved(values)
         if len([box for box in values if len(values[box]) == 0]):
-            # TODO: When does this ever happen?
+            # TODO: Code taken from assignment -- when does this ever happen?
             return False
     return values
 
@@ -291,12 +340,13 @@ def search(values: SudokuDict) -> MaybeSolution:
         return values
 
     # Choose one of the unfilled squares with the fewest possibilities
-    n, s = min((len(values[s]), s) for s in boxes() if len(values[s]) > 1)
+    n, s = min((len(values[s]), s)
+               for s in boxes()
+               if len(values[s]) > 1)
 
-    # Recursively try to solve each one of the resulting sudokus.
+    # Recursively try to solve each one of the resulting Sudokus.
     for value in values[s]:
-        branch = dict(values)
-        branch[s] = value
+        branch = assign_value(dict(values), s, value)
         attempt = search(branch)
         if attempt:
             return attempt
@@ -327,7 +377,6 @@ def solve(grid: str) -> MaybeSolution:
 if __name__ == '__main__':
     diag_sudoku_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
     display(solve(diag_sudoku_grid))
-    exit(1)
 
     try:
         from visualize import visualize_assignments
