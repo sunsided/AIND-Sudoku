@@ -1,5 +1,6 @@
-import solution
 import unittest
+
+import solution
 
 
 class TestNakedTwins(unittest.TestCase):
@@ -33,7 +34,7 @@ class TestNakedTwins(unittest.TestCase):
          'F5': '8', 'E2': '3', 'F7': '35', 'F8': '9', 'D2': '1', 'H1': '4', 'H6': '17', 'H2': '9', 'H4': '17',
          'D3': '79', 'B4': '27', 'B5': '1', 'B6': '8', 'B7': '27', 'E9': '2', 'B1': '9', 'B2': '5', 'B3': '6',
          'D6': '279', 'D7': '34', 'D4': '237', 'D5': '347', 'B8': '3', 'B9': '4', 'D1': '5'}
-        ]
+    ]
 
     before_naked_twins_2 = {'A1': '23', 'A2': '4', 'A3': '7', 'A4': '6', 'A5': '8', 'A6': '5', 'A7': '23', 'A8': '9',
                             'A9': '1', 'B1': '6', 'B2': '9', 'B3': '8', 'B4': '4', 'B5': '37', 'B6': '1', 'B7': '237',
@@ -76,7 +77,6 @@ class TestNakedTwins(unittest.TestCase):
                         "Your naked_twins function produced an unexpected board.")
 
 
-
 class TestDiagonalSudoku(unittest.TestCase):
     diagonal_grid = '2.............62....1....7...6..8...3...9...7...6..4...4....8....52.............3'
     solved_diag_sudoku = {'G7': '8', 'G6': '9', 'G5': '7', 'G4': '3', 'G3': '2', 'G2': '4', 'G1': '6', 'G9': '5',
@@ -93,6 +93,7 @@ class TestDiagonalSudoku(unittest.TestCase):
 
     def test_solve(self):
         self.assertEqual(solution.solve(self.diagonal_grid), self.solved_diag_sudoku)
+
 
 if __name__ == '__main__':
     unittest.main()

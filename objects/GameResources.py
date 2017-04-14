@@ -1,11 +1,14 @@
-import os, pygame
+import os
+
+import pygame
+
 
 def load_image(name):
     """A better load of images."""
     fullname = os.path.join("images", name)
     try:
         image = pygame.image.load(fullname)
-        if image.get_alpha() == None:
+        if image.get_alpha() is None:
             image = image.convert()
         else:
             image = image.convert_alpha()
