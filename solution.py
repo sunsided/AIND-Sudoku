@@ -110,6 +110,8 @@ def naked_twins(values: SudokuDict) -> SudokuDict:
     Because these values are locked to these boxes, they cannot possibly appear in any other
     peer box. Because of this, they can be removed as candidates from all peers.
     
+    After this method, new naked twins might have been introduced.
+    
     Parameters
     ----------
     values : SudokuDict  
@@ -123,14 +125,13 @@ def naked_twins(values: SudokuDict) -> SudokuDict:
 
     # Find all instances of naked twins
     for unit in unit_list():
-        possible_twins = {}  # type: Dict[Values, List[Box]]
         # We don't have to look at length-1 entries because identical entries of that are an error to begin with.
         # Likewise we don't have to look at length-9 entries because they don't leave
-        # room for removing anything from peers. Note that the maximum value in `range` is exclusive.
-        for length in range(2, 9):
-            candidates = ((values[box], box) for box in unit if len(values[box]) == length)
-            for v, b in candidates:
-                possible_twins.setdefault(v, []).append(b)
+        # room for removing anything from peers.
+        possible_twins = {}  # type: Dict[Values, List[Box]]
+        candidates = ((values[box], box) for box in unit if 1 < len(values[box]) < 9)
+        for candidate_digits, box in candidates:
+            possible_twins.setdefault(candidate_digits, []).append(box)
 
         # We only need to look at digit combinations that are available to two or more boxes.
         for candidate_digits in (c for c in possible_twins if len(possible_twins[c]) > 1):
@@ -281,9 +282,8 @@ def reduce_puzzle(values: SudokuDict) -> MaybeSolution:
         values = only_choice(values)
 
         stalled = solved_values_before == n_solved(values)
-        if len([box for box in values if len(values[box]) == 0]):
-            # TODO: Code taken from assignment -- when does this ever happen?
-            return False
+        # Original assignment code returned False if len(...) == 0
+        assert len([box for box in values if len(values[box]) > 0])
     return values
 
 
